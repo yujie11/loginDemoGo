@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>login</title>
+</head>
+<body>
+<br><br><br><br><br><br><br><br>
+<div align="center">
+<form action="/login" method="post" novalidate autocomplete="off">
+    <div>
+        <label  for="mobileNumber">手机号:</label>
+        <input type="tel" name="mobilenumber" id="mobilenumber">
+    </div>
+    <div>
+        <label  for="password">密码:</label>
+        <input type="password" name="password" id="password">
+    </div>
+    <div>
+        <input type="submit" value="登陆">
+        <input type="button" name="register" id="register" value="注册" onclick="location.href='http://localhost:8080/register'"/>
+    </div>
+</form>
+</div>
+</body>
+</html>
