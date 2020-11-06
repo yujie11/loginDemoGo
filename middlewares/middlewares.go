@@ -7,6 +7,7 @@ import (
 	"log"
 	"login/models"
 	"net/http"
+	"strings"
 )
 
 //Json返回结果
@@ -32,7 +33,6 @@ func GenerateToken(user *models.User) (string, error) {
 
 //解析token
 func ParseToken(tokenStr string) (cliams jwt.MapClaims, err error) {
-
 	token, err := jwt.Parse(tokenStr, func( *jwt.Token) (interface{}, error) {
 		return []byte("secret"), nil
 	})
@@ -69,6 +69,28 @@ func TokenMiddleware() gin.HandlerFunc{
 			c.JSON(http.StatusUnauthorized,gin.H{
 				"result": Result{
 					Message: "解析token失败",
+					Status: 0,
+				},
+			})
+			c.Abort()
+			return
+		}
+		mobilenumber, ok := c.GetQuery("mobilenumber")
+		if !ok {
+			c.JSON(http.StatusUnauthorized,gin.H{
+				"result": Result{
+					Message: "未登陆",
+					Status: 0,
+				},
+			})
+			c.Abort()
+			return
+		}
+		number := claims["mobilenumber"].(string)
+		if strings.Compare(number,mobilenumber) != 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"result": Result{
+					Message: "token有误",
 					Status: 0,
 				},
 			})

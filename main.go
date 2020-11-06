@@ -48,6 +48,12 @@ func main() {
 		//增加用户
 		v1.POST("/user/add", handles.Userregister(DB, Rdb))
 	}
+	v2 := v1.Group("")
+	{
+		v2.GET("/user", middlewares.TokenMiddleware(), handles.UserGet(DB, Rdb))
+		v2.POST("/user", middlewares.TokenMiddleware(), handles.Userregister(DB, Rdb))
+		v2.PUT("/user", middlewares.TokenMiddleware(), handles.UserUpdate(DB, Rdb))
+	}
 	r.LoadHTMLFiles("./statics/login.html", "./statics/index.html", "./statics/register.html")
 	r.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)
