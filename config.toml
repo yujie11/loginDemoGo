@@ -1,0 +1,26 @@
+
+[dbservers.test]
+host = "127.0.0.1"
+port = 5432
+dbname = "test"
+user = "loginuser"
+password = "123456"
+
+[dbservers.dborm]
+host = "127.0.0.1"
+port = 5432
+dbname = "test"
+user = "loginuser"
+password = "123456"
+
+[dbservers.dbsqlx]
+host = "127.0.0.1"
+port = 5432
+dbname = "test"
+user = "loginuser"
+password = "123456"
+
+[redisservers.redis]
+addr = "127.0.0.1:6379"
+password = ""
+db = 10

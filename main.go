@@ -1,70 +1,65 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
-	"github.com/jinzhu/gorm"
-	_ "github.com/lib/pq"
-	"login/handles"
-	"login/middlewares"
+	"flag"
+	"login/logging"
 	"login/utils/config"
+	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
+	"login/handlers"
+	"login/my_middlewares"
 	"net/http"
 )
+type Config config.Config
 
-//Json返回结果
-type Result middlewares.Result
+var (
+	configPath string
+	conf       = &Config{}
+)
 
-var DB *gorm.DB
-var Rdb *redis.Client
+func init() {
+	//读取配置文件
+	flag.StringVar(&configPath, "conf", "config.toml", "数据库配置文件")
+}
 
 func main() {
-	//数据库连接配置信息
-	DBInfo := config.DBServer{
-		Host:     "127.0.0.1",
-		Port:     5432,
-		DBName:   "test",
-		User:     "",
-		Password: ""}
-	var err error
-	DB, err = DBInfo.NewGromDB()
+	conf, err := config.New(configPath)
 	if err != nil {
-		fmt.Println("数据库连接失败")
+		//数据库配置信息错误
+		logging.Errorf("解析配置文件出错")
 		return
 	}
-	//连接redis
-	Rdb = config.NewRedis()
 	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+	//初始化中间件
+	my_middlewares.InitMiddleware(r, conf)
 	v1 := r.Group("/api")
 	{
+		//用户注册
+		v1.POST("/user/add", handlers.UserRegister)
+		v1m := v1.Group("", my_middlewares.TokenMiddleware)
 		//更新用户信息:修改密码或用户名
-		v1.POST("/user/update", middlewares.TokenMiddleware(), handles.UserUpdate(DB, Rdb))
+		v1m.POST("/user/update", handlers.UserUpdate)
 		//获取用户自身信息
-		v1.POST("/user/get", middlewares.TokenMiddleware(), handles.UserGet(DB, Rdb))
+		v1m.POST("/user/get", handlers.UserGet)
 		//用户列表
-		v1.POST("/user/list", middlewares.TokenMiddleware(), handles.UserGetList(DB, Rdb))
-		//增加用户
-		v1.POST("/user/add", handles.Userregister(DB, Rdb))
+		v1m.POST("/user/list", handlers.UserGetList)
 	}
-	v2 := v1.Group("")
+	v2 := v1.Group("/user", my_middlewares.TokenMiddleware)
 	{
-		v2.GET("/user", middlewares.TokenMiddleware(), handles.UserGet(DB, Rdb))
-		v2.POST("/user", middlewares.TokenMiddleware(), handles.Userregister(DB, Rdb))
-		v2.PUT("/user", middlewares.TokenMiddleware(), handles.UserUpdate(DB, Rdb))
+		v2.GET("", handlers.UserGet)
+		v2.POST("", handlers.UserRegister)
+		v2.PUT("", handlers.UserUpdate)
 	}
 	r.LoadHTMLFiles("./statics/login.html", "./statics/index.html", "./statics/register.html")
 	r.GET("/login", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "login.html", nil)
 	})
-	r.POST("/login", handles.UserLogin(DB, Rdb))
+	r.POST("/login", handlers.UserLogin)
 	r.GET("/register", func(c *gin.Context) {
 		//注册页面
 		c.HTML(http.StatusOK, "register.html", nil)
 	})
-	r.POST("/register", handles.Userregister(DB, Rdb))
-	r.POST("/verify", handles.Verify(Rdb))
+	r.POST("/register", handlers.UserRegister)
+	r.POST("/verify", handlers.Verify)
 	r.Run()
-	defer DB.Close()
 }
